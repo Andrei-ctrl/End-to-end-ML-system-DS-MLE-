@@ -105,10 +105,15 @@ def update_retrain_state():
 def trigger_retraining():
     print("Triggering automatic retraining...")
     subprocess.run(
-        [sys.executable, "src/training/retrain_with_guard.py"],
+        [
+            sys.executable,
+            "-m",
+            "src.training.retrain_with_guard",
+        ],
         cwd=PROJECT_ROOT,
         check=True,
     )
+
 
 
 def main():
