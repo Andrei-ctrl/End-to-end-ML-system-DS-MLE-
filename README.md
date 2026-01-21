@@ -17,13 +17,23 @@ Key features
 * Cooldown mechanism to prevent retraining loops
 * Unit tests for critical logic
 * Dockerized for reproducibility
+  
+<img width="1511" height="749" alt="image" src="https://github.com/user-attachments/assets/0b712371-0b31-4d65-861b-9fc016bd4660" />
 
 
 ## Model Training
 
 The model used in this project is a Logistic Regression classifier. Before training, the data is preprocessed by scaling numerical features with a standard scaler and encoding categorical features using one-hot encoding. The model is evaluated using ROC-AUC and accuracy to measure its performance. All experiments are tracked locally using MLflow so that metrics and parameters are reproducible.
 
-After training several artifacts are saved. The trained model is stored as a serialized file, the evaluation metrics are saved in a JSON file and baseline statistics from the training data are stored to be used later for drift detection.
+After training several artifacts are saved. The trained model is stored as a serialized file, the evaluation metrics are saved in a JSON file and baseline statistics from the training data are stored to be used later for drift detection. 
+
+## Example
+
+A couple of new dummy customers were used to populate the logs. Some with high churn probability and some with lown churn probablity. 
+
+Example of low churn probability: <img width="1417" height="796" alt="image" src="https://github.com/user-attachments/assets/bab0943e-624a-4b0c-98fd-c8d370a9f160" />
+
+Example of high churn probability: <img width="1415" height="819" alt="image" src="https://github.com/user-attachments/assets/6fc29549-a5fc-47ce-b133-7ed5806d0d21" />
 
 
 ## Drift Detection
@@ -31,6 +41,8 @@ After training several artifacts are saved. The trained model is stored as a ser
 Data drift is detected using Evidently’s DataDriftPreset. The system compares the original training data, which serves as a reference, with new data collected during inference. This inference data is extracted from application logs.
 
 The drift detection step produces an interactive HTML report for inspection and a JSON summary that is used programmatically. If a large enough share of features shows drift compared to the reference data, the system considers the model a candidate for retraining.
+
+<img width="1236" height="254" alt="image" src="https://github.com/user-attachments/assets/2f857494-c0ba-4f8c-bfa2-bd5a50954ac2" />
 
 
 ## Automated Retraining with Guard
