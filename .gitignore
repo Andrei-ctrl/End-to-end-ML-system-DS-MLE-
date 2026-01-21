@@ -1,0 +1,21 @@
+# IDE
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+
+# ML artifacts / logs
+mlruns/
+artifacts/
+logs/
+reports/
+
+# OS
+.DS_Store
+Thumbs.db
