@@ -60,10 +60,3 @@ The entire project is containerized using Docker. By running Docker Compose the 
 * MLflow (experiment tracking)
 * pytest (testing)
 * Docker & Docker Compose
-
-## Future possible extensions
-
-* CI/CD pipeline
-* Model registry promotion stage
-* Alerting (Slack / email)
-
