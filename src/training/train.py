@@ -10,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score, accuracy_score
-
+from datetime import datetime
 import joblib
 import mlflow
 
@@ -106,7 +106,15 @@ def main():
         mlflow.log_metric("accuracy", acc)
 
         # Save artifacts
-        joblib.dump(pipeline, ARTIFACTS_DIR / "model.joblib")
+        version = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+        model_path = ARTIFACTS_DIR / f"model_{version}.joblib"
+        joblib.dump(pipeline, model_path)
+
+        # Also update a "latest" pointer
+        latest_path = ARTIFACTS_DIR / "model_latest.joblib"
+        joblib.dump(pipeline, latest_path)
+
+        mlflow.log_param("model_version", version)
 
         metrics = {
             "roc_auc": roc_auc,
@@ -146,6 +154,11 @@ def main():
         print("Training completed")
         print(f"ROC-AUC: {roc_auc:.4f}")
         print(f"Accuracy: {acc:.4f}")
+
+        return {
+            "roc_auc": roc_auc,
+            "accuracy": acc,
+        }
 
 
 if __name__ == "__main__":

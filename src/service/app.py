@@ -9,13 +9,11 @@ from pydantic import BaseModel
 from prometheus_client import Counter, Histogram, generate_latest
 from loguru import logger
 
-# -------------------------------------------------
 # Paths
-# -------------------------------------------------
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_DIR = PROJECT_ROOT / "artifacts"
 
-MODEL_PATH = ARTIFACTS_DIR / "model.joblib"
+MODEL_PATH = ARTIFACTS_DIR / "model_latest.joblib"
 SCHEMA_PATH = ARTIFACTS_DIR / "train_schema.json"
 
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -27,9 +25,7 @@ logger.add(
     level="INFO",
 )
 
-# -------------------------------------------------
 # Load artifacts
-# -------------------------------------------------
 model = joblib.load(MODEL_PATH)
 
 with open(SCHEMA_PATH) as f:
@@ -37,14 +33,10 @@ with open(SCHEMA_PATH) as f:
 
 FEATURES = schema["all_features"]
 
-# -------------------------------------------------
 # App
-# -------------------------------------------------
 app = FastAPI(title="Churn Prediction API")
 
-# -------------------------------------------------
 # Prometheus metrics
-# -------------------------------------------------
 REQUEST_COUNT = Counter(
     "prediction_requests_total",
     "Total number of prediction requests",
@@ -55,9 +47,7 @@ REQUEST_LATENCY = Histogram(
     "Latency of prediction requests",
 )
 
-# -------------------------------------------------
 # Schemas
-# -------------------------------------------------
 class PredictionRequest(BaseModel):
     features: dict
 
@@ -67,9 +57,7 @@ class PredictionResponse(BaseModel):
     churn_prediction: int
 
 
-# -------------------------------------------------
 # Endpoints
-# -------------------------------------------------
 @app.get("/health")
 def health():
     return {

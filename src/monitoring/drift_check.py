@@ -1,9 +1,11 @@
 import json
 from pathlib import Path
-
+import subprocess
 import pandas as pd
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset
+import sys
+from datetime import datetime, timedelta, timezone
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -11,6 +13,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = PROJECT_ROOT / "data" / "raw" / "churn-bigml-80.csv"
 LOG_PATH = PROJECT_ROOT / "logs" / "api.log"
 REPORTS_DIR = PROJECT_ROOT / "reports" / "drift"
+STATE_PATH = PROJECT_ROOT / "artifacts" / "retrain_state.json"
+COOLDOWN_HOURS = 0  # 0h cooldown retraining for debugging
 
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -64,6 +68,47 @@ def should_retrain(drift_report: dict, threshold: float = 0.3) -> bool:
 
     return share >= threshold
 
+def can_retrain() -> bool:
+    now = datetime.now(timezone.utc)
+
+    # No state file → allow retraining
+    if not STATE_PATH.exists():
+        return True
+
+    try:
+        with open(STATE_PATH) as f:
+            content = f.read().strip()
+            if not content:
+                return True  # empty file → allow retraining
+            state = json.loads(content)
+    except (json.JSONDecodeError, OSError):
+        return True  # corrupted file → allow retraining
+
+    last_retrain = datetime.fromisoformat(state["last_retrain"])
+
+    elapsed = (now - last_retrain).total_seconds() / 3600
+    if elapsed < COOLDOWN_HOURS:
+        print(f"Cooldown active ({elapsed:.2f}h elapsed)")
+        return False
+
+    return True
+
+
+def update_retrain_state():
+    with open(STATE_PATH, "w") as f:
+        json.dump(
+            {"last_retrain": datetime.now(timezone.utc).isoformat()},
+            f,
+            indent=2,
+        )
+
+def trigger_retraining():
+    print("Triggering automatic retraining...")
+    subprocess.run(
+        [sys.executable, "src/training/retrain_with_guard.py"],
+        cwd=PROJECT_ROOT,
+        check=True,
+    )
 
 
 def main():
@@ -96,7 +141,12 @@ def main():
     print(f"Drift report saved to: {output_path}")
 
     if should_retrain(drift_json):
-        print("Drift threshold exceeded — retraining recommended.")
+        if can_retrain():
+            print("Drift threshold exceeded — retraining triggered.")
+            trigger_retraining()
+            update_retrain_state()
+        else:
+            print("Drift detected but cooldown prevents retraining.")
     else:
         print("Drift within acceptable range — no retraining needed.")
 
